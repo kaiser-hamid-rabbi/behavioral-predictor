@@ -1,0 +1,23 @@
+# Use python 3.11 slim image
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONPATH=/app
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gcc build-essential libpq-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install python dependencies
+COPY backend/ /app/
+RUN pip install --upgrade pip \
+    && pip install -e .
+
+# Start Celery worker
+CMD ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=info"]

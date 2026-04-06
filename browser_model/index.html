@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Behavioral Predictor | Real-time Inference</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- ONNX Runtime Web -->
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        
+        <header class="app-header">
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <h1>Behavioral Predictor</h1>
+            </div>
+            <div class="status-indicator">
+                <span id="model-status-dot" class="dot warning"></span>
+                <span id="model-status-text">Loading Model...</span>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <!-- Left Panel: Event Simulator -->
+            <section class="panel simulator-panel glassmorphism">
+                <div class="panel-header">
+                    <h2>Live Event Stream</h2>
+                    <p class="subtitle">Simulate user actions to generate real-time predictions.</p>
+                </div>
+
+                <div class="action-grid">
+                    <button class="btn-action" data-event="pageview" data-cat="home">
+                        <span class="icon">🏠</span> Page View
+                    </button>
+                    <button class="btn-action" data-event="search" data-cat="books">
+                        <span class="icon">🔍</span> Search
+                    </button>
+                    <button class="btn-action" data-event="viewcontent" data-cat="laptop">
+                        <span class="icon">👁️</span> View Item
+                    </button>
+                    <button class="btn-action" data-event="add_to_cart" data-cat="phone">
+                        <span class="icon">🛒</span> Add to Cart
+                    </button>
+                    <button class="btn-action highlight" data-event="purchase" data-cat="phone">
+                        <span class="icon">💳</span> Purchase
+                    </button>
+                    <button class="btn-action" data-event="scroll" data-cat="home">
+                        <span class="icon">📜</span> Scroll
+                    </button>
+                </div>
+
+                <div class="event-stream-container">
+                    <h3>Recent Events <span class="badge" id="event-count">0/20</span></h3>
+                    <div class="event-list" id="event-list">
+                        <!-- Events populated here -->
+                        <div class="empty-state">No events yet. Click buttons above to simulate.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Real-time Predictions -->
+            <section class="panel prediction-panel glassmorphism">
+                <div class="panel-header">
+                    <h2>Real-time Intelligence</h2>
+                    <p class="subtitle">Model inference executed locally in WASM <span id="inference-time" class="timing">0ms</span></p>
+                </div>
+
+                <div class="prediction-grid">
+                    <!-- Purchase Probability -->
+                    <div class="metric-card">
+                        <div class="metric-header">purchase probability</div>
+                        <div class="metric-value">
+                            <span id="pred-purchase">0</span><span class="unit">%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar fill-success" id="bar-purchase" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Churn Risk -->
+                    <div class="metric-card">
+                        <div class="metric-header">churn risk</div>
+                        <div class="metric-value">
+                            <span id="pred-churn">0</span><span class="unit">%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar fill-warning" id="bar-churn" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Next Event -->
+                    <div class="metric-card text-metric">
+                        <div class="metric-header">next likely event</div>
+                        <div class="metric-value text-value" id="pred-next-event">-</div>
+                    </div>
+
+                    <!-- Preferred Channel -->
+                    <div class="metric-card text-metric">
+                        <div class="metric-header">preferred channel</div>
+                        <div class="metric-value text-value" id="pred-channel">-</div>
+                    </div>
+                    
+                    <!-- Engagement Score -->
+                    <div class="metric-card">
+                        <div class="metric-header">engagement score</div>
+                        <div class="metric-value" id="pred-engagement">0.0</div>
+                    </div>
+
+                    <!-- Inactivity Risk -->
+                    <div class="metric-card">
+                        <div class="metric-header">inactivity risk (days)</div>
+                        <div class="metric-value" id="pred-inactivity">0.0</div>
+                    </div>
+                    
+                    <!-- Active Time -->
+                    <div class="metric-card text-metric col-span-2">
+                        <div class="metric-header">peak active time</div>
+                        <div class="metric-value text-value" id="pred-time">-</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Application Logic -->
+    <script src="js/predictor.js"></script>
+    <script src="js/event_simulator.js"></script>
+</body>
+</html>
