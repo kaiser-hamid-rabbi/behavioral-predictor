@@ -116,6 +116,7 @@ python scripts/spark_etl_pipeline.py
 
 ## 5. Boot the Docker Infrastructure
 
+```bash
 # From the project root
 docker-compose up -d --build
 
