@@ -10,8 +10,16 @@ back to Parquet for offline ML consumption.
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, count, countDistinct, array_agg, max as spark_max
 import os
+import sys
 
 def run_distributed_pipeline():
+    # Auto-detect macOS and inject Homebrew Java path to prevent PySpark JVM crash
+    if sys.platform == "darwin" and "JAVA_HOME" not in os.environ:
+        brew_java = "/opt/homebrew/opt/openjdk@17"
+        if os.path.exists(brew_java):
+            os.environ["JAVA_HOME"] = brew_java
+            print(f"Auto-configured JAVA_HOME for macOS: {brew_java}")
+
     print("Initializing distributed computation cluster (PySpark)...")
     
     spark = SparkSession.builder \

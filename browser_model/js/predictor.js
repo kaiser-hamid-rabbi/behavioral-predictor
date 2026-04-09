@@ -26,7 +26,7 @@ class BehavioralPredictor {
             this.updateStatus('Loading ONNX Model (<1MB)...', 'warning');
             
             // Note: Since this is meant to be browser deployable, users serve this folder
-            const modelPath = './models/behavioral_predictor.onnx';
+            const modelPath = './behavioral_predictor.onnx';
             
             try {
                 this.session = await ort.InferenceSession.create(modelPath, { executionProviders: ['wasm'] });
@@ -49,9 +49,11 @@ class BehavioralPredictor {
     async loadVocabularies() {
         // Fallback mock vocab if network restricted / local file testing
         this.vocab = {
-            event_name: { "<PAD>":0, "<UNK>":1, "pageview":2, "search":3, "viewcontent":4, "add_to_cart":5, "purchase":6, "scroll":7 },
-            device_os: { "<PAD>":0, "<UNK>":1, "desktop":2, "ios":3, "android":4 },
-            channel: { "<PAD>":0, "<UNK>":1, "browser":2, "app":3 }
+            event_name: { "<PAD>":0, "scroll":1, "add_to_cart":2, "viewcontent":3, "pageview":4, "search":5, "purchase":6 },
+            device_os: { "<PAD>":0, "android":1, "ios":2, "desktop":3 },
+            channel: { "<PAD>":0, "browser":1, "app":2 },
+            category: { "<PAD>":0, "books":1, "beauty":2, "electronics":3, "fashion":4, "sports":5, "home":6, "toys":7, "grocery":8, "auto":9, "health":10, "music":11, "games":12, "other":13 },
+            traffic_source: { "<PAD>":0, "direct":1, "organic":2, "paid":3, "referral":4, "social":5 }
         };
         
         // Attempt to load from JSON, silently fallback to generated
@@ -83,17 +85,28 @@ class BehavioralPredictor {
         const recentEvents = events.slice(-this.targetSeqLen);
         const padLen = this.targetSeqLen - recentEvents.length;
         
-        // Prepare tensors
+        // Prepare categorical tensors [1, seq_len]
         const event_ids = new BigInt64Array(this.targetSeqLen);
         const device_ids = new BigInt64Array(this.targetSeqLen);
         const channel_ids = new BigInt64Array(this.targetSeqLen);
-        const padding_mask = new Uint8Array(this.targetSeqLen); // Bool is UInt8 in JS ONNX
+        const category_ids = new BigInt64Array(this.targetSeqLen);
+        const hour_ids = new BigInt64Array(this.targetSeqLen);
+        const traffic_ids = new BigInt64Array(this.targetSeqLen);
+        const padding_mask = new Uint8Array(this.targetSeqLen);
+        
+        // Prepare numeric features [1, 6]
+        const numeric_features = new Float32Array(6);
+        
+        const currentHour = new Date().getHours();
         
         // Pad prefix
         for (let i = 0; i < padLen; i++) {
             event_ids[i] = 0n;
             device_ids[i] = 0n;
             channel_ids[i] = 0n;
+            category_ids[i] = 0n;
+            hour_ids[i] = 0n;
+            traffic_ids[i] = 0n;
             padding_mask[i] = 1; // true = padding
         }
         
@@ -101,10 +114,24 @@ class BehavioralPredictor {
         recentEvents.forEach((ev, i) => {
             const idx = padLen + i;
             event_ids[idx] = BigInt(this.encodeVocab('event_name', ev.event_name));
-            device_ids[idx] = BigInt(this.encodeVocab('device_os', 'desktop')); // hardcoded for demo UI
+            device_ids[idx] = BigInt(this.encodeVocab('device_os', 'desktop'));
             channel_ids[idx] = BigInt(this.encodeVocab('channel', 'browser'));
+            category_ids[idx] = 0n; // Use vocab map if needed
+            hour_ids[idx] = BigInt(currentHour);
+            traffic_ids[idx] = BigInt(this.encodeVocab('traffic_source', 'direct'));
             padding_mask[idx] = 0; // false
         });
+
+        // Compute 6 numeric statistics for fusion
+        if (recentEvents.length > 0) {
+            const num = recentEvents.length;
+            numeric_features[0] = recentEvents.filter(e => e.event_name === 'purchase').length / num;
+            numeric_features[1] = recentEvents.filter(e => e.event_name === 'add_to_cart').length / num;
+            numeric_features[2] = recentEvents.filter(e => e.event_name === 'scroll').length / num;
+            numeric_features[3] = new Set(recentEvents.map(e => e.event_name)).size / 10;
+            numeric_features[4] = 0.5; // avg_time_delta mock
+            numeric_features[5] = 1.0; // session_count mock
+        }
 
         let results;
         if (this.mockMode) {
@@ -116,6 +143,10 @@ class BehavioralPredictor {
                 "event_ids": new ort.Tensor('int64', event_ids, [1, this.targetSeqLen]),
                 "device_ids": new ort.Tensor('int64', device_ids, [1, this.targetSeqLen]),
                 "channel_ids": new ort.Tensor('int64', channel_ids, [1, this.targetSeqLen]),
+                "category_ids": new ort.Tensor('int64', category_ids, [1, this.targetSeqLen]),
+                "hour_ids": new ort.Tensor('int64', hour_ids, [1, this.targetSeqLen]),
+                "traffic_ids": new ort.Tensor('int64', traffic_ids, [1, this.targetSeqLen]),
+                "numeric_features": new ort.Tensor('float32', numeric_features, [1, 6]),
                 "padding_mask": new ort.Tensor('bool', padding_mask, [1, this.targetSeqLen])
             };
 

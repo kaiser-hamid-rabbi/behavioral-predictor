@@ -19,7 +19,7 @@ COPY backend/pyproject.toml /app/
 # Copy a fake setup.py or just use pip install . if backend is a module
 COPY backend/ /app/
 RUN pip install --upgrade pip \
-    && pip install -e .
+    && pip install --extra-index-url https://download.pytorch.org/whl/cpu -e .
 
 EXPOSE 8000
 

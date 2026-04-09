@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 *.so
 *.egg-info/
+*.egg
 dist/
 build/
 .eggs/
@@ -18,15 +19,34 @@ env/
 .idea/
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace
 
 # OS
 .DS_Store
 Thumbs.db
+Desktop.ini
 
 # Environment
 .env
+.env.local
+.env.*.local
 
-# ML artifacts
+# Linting & Formatting
+.ruff_cache/
+.mypy_cache/
+
+# Testing
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+
+# ML artifacts (keep directory structure, ignore binaries)
 models/*.pt
 models/*.onnx
 models/*.bin
@@ -38,11 +58,6 @@ dataset/EventsData/users/*.parquet
 
 # Docker
 docker/.env
-
-# Testing
-.coverage
-htmlcov/
-.pytest_cache/
 
 # Alembic
 alembic/versions/*.pyc

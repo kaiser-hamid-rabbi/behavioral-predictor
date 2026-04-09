@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:16
@@ -66,7 +64,8 @@ services:
   worker:
     build:
       context: .
-      dockerfile: docker/Dockerfile.worker
+      dockerfile: docker/Dockerfile
+    command: ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=info"]
     volumes:
       - ./backend:/app
       - ./dataset:/dataset
