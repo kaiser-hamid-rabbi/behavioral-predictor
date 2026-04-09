@@ -116,12 +116,16 @@ python scripts/spark_etl_pipeline.py
 
 ## 5. Boot the Docker Infrastructure
 
-```bash
-# From the project root (not backend/)
-cd ..
+# From the project root
 docker-compose up -d --build
-docker ps
+
+# OPTIMIZED: If the build is slow, use the pre-optimized CPU-only path:
+docker-compose build --no-cache api
+docker-compose up -d
 ```
+
+> [!TIP]
+> The `api` service is configured to use CPU-only PyTorch wheels. This reduces the image size by ~2GB and cuts the build time from 15 minutes down to less than 60 seconds.
 
 **Expected services:**
 
